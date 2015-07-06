@@ -11,8 +11,9 @@
   ([]
    (build-clock-state "#ff3344"))
   ([color]
-   {:date  (js/Date.)
-    :color color}))
+   {:count  0
+    :color color
+    :name ""}))
 
 (def clock-state (atom (build-clock-state)))
 
@@ -29,18 +30,11 @@
            :on-change #(swap! clock-state assoc :color (u/e-value %))}])
 
 
-(defn clock-view [timer]
-  [:div {:style {:color (:color @timer)}
+
+(defn clock-view [state]
+  [:div {:style {:color (:color @state)}
          :class "clock"}
-   (u/fmt (:date @timer))])
-
-
-
-(defn clock-component [timer]
-  [:div {:class "well"}
-   [:h1 "Hello world, it is now : "]
-   [clock-view timer]
-   [color-input timer]])
+   (u/fmt (js/Date. (:count @state)))])
 
 
 ;_________________________________________________
@@ -49,11 +43,11 @@
 ;_________________________________________________|
 
 (defn clock-component-test1 [timer]
-  (with-meta clock-component
+  (with-meta clock-view
              {:component-did-mount
               (go-loop []
                        (<! (timeout 1000))
-                       (swap! timer assoc :date (js/Date.))
+                       (swap! timer update-in [:count] + 1000)
                        (recur))}))
 
 

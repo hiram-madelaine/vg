@@ -1,10 +1,11 @@
 body {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 600px;
+  //max-width: 600px;
   margin: 0 auto;
   padding-top: 72px;
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
+  background-color: #555559;
   color: #333;
   line-height: 1.5em;
 }
@@ -34,8 +35,24 @@ a:hover {
 }
 
 
+#clocks {
+
+  display: flex;
+  flex-wrap: wrap;
+}
 
 .clock {
- font-size: 128px;
+ font-size: 100px;
  line-height: 1.2em;
+}
+
+.bonus-clock {
+  position: relative;
+  padding: 2px;
+}
+
+.close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
 }

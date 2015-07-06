@@ -5,7 +5,8 @@
               [goog.events :as events]
               [goog.history.EventType :as EventType]
               [testvg.test1 :refer [test1-page]]
-              [testvg.test3 :refer [test3-page]])
+              [testvg.test3 :refer [test3-page]]
+              [testvg.bonus :refer [bonus-page]])
     (:import goog.History))
 
 
@@ -16,8 +17,9 @@
 (defn home-page []
   [:div [:h2 "Welcome to testvg"]
    [:div [:a {:href "#/about"} "go to about page"]]
-   [:div [:a {:href "#/test1"} "go to about test1"]]
-   [:div [:a {:href "#/test3"} "go to about test3"]]])
+   [:div [:a {:href "#/test1"} "go to page test1"]]
+   [:div [:a {:href "#/test3"} "go to page test3"]]
+   [:div [:a {:href "#/bonus"} "go to the bonus page"]]])
 
 (defn about-page []
   [:div [:h2 "About testvg"]
@@ -39,14 +41,12 @@
 (secretary/defroute "/about" []
   (session/put! :current-page #'about-page))
 
-(secretary/defroute "/test1"
-                    []
-                    (session/put! :current-page #'test1-page))
+(secretary/defroute "/test1" [] (session/put! :current-page #'test1-page))
 
-(secretary/defroute "/test3"
-                    []
-                    (session/put! :current-page #'test3-page))
+(secretary/defroute "/test3" [] (session/put! :current-page #'test3-page))
 
+
+(secretary/defroute "/bonus" [] (session/put! :current-page #'bonus-page))
 
 ;; -------------------------
 ;; History
