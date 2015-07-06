@@ -20,7 +20,8 @@
                  [environ "1.0.0"]
                  [org.clojure/clojurescript "0.0-3308" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [secretary "1.2.3"]]
+                 [secretary "1.2.3"]
+                 [com.cognitect/transit-cljs "0.8.220"]]
 
   :plugins [[lein-environ "1.0.0"]
             [lein-asset-minifier "0.2.2"]]
