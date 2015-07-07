@@ -11,13 +11,16 @@
 
 
 (defn bonus-page []
-  [:div {:class "container"} "And now the bonus !"
-   [:button {:class "btn btn-lg btn-primary"
-             :on-click #(swap! bonus-state conj (build-startable-clock))} "Add clock"]
+  [:div {:class ""}
+   [:div {:class "navbar navbar-default"}
+    [:div {:class "container-fluid"}
+     [:button {:class    "btn btn-default navbar-btn"
+               :on-click #(swap! bonus-state conj (build-startable-clock))} "Add a task"]]]
    [:div {:id "clocks"}
-    (for [clock @bonus-state]
-      ^{:key (:uuid @clock)} [:div {:class "bonus-clock"}
-                              [startable-clock-component clock]
-                              [:button {:class    "close"
-                                        :on-click #(swap! bonus-state (fn [xs]
-                                                                        (remove #{clock} xs)))} "X"]])]])
+    (doall (for [clock @bonus-state]
+             ^{:key (:uuid @clock)} [:div {:class "bonus-clock"}
+                                     [startable-clock-component clock]
+                                     [:button {:class    "close"
+                                               :on-click #(swap! bonus-state (fn [xs]
+                                                                               (remove #{clock} xs)))} "X"]]))]
+   [:div [:a {:href "#/"} "go to the home page"]]])

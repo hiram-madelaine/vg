@@ -33,7 +33,7 @@
 
 (defn clock-view [state]
   [:div {:style {:color (:color @state)}
-         :class "clock"}
+         :class "time"}
    (u/fmt (js/Date. (:count @state)))])
 
 
@@ -42,13 +42,21 @@
 ;          State handling                         |
 ;_________________________________________________|
 
-(defn clock-component-test1 [timer]
-  (with-meta clock-view
-             {:component-did-mount
-              (go-loop []
-                       (<! (timeout 1000))
-                       (swap! timer update-in [:count] + 1000)
-                       (recur))}))
+(defn clock-component-test1 [state]
+  (let [kill (chan)]
+    (reagent/create-class
+      {:reagent-render
+       (fn [timer]
+         [clock-view timer])
+       :component-did-mount
+       #(go-loop []
+                 (let [[cmd c] (alts! [kill (timeout 1000)])]
+                   (when-not (= c kill)
+                     (do
+                       (swap! state update-in [:count] + 1000)
+                       (recur)))))
+       :component-will-unmount
+       #(put! kill :kill)})))
 
 
 

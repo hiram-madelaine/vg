@@ -15,14 +15,18 @@
      [:meta {:charset "utf-8"}]
      [:meta {:name "viewport"
              :content "width=device-width, initial-scale=1"}]
-     (include-css "css/bootstrap.min.css" (if (env :dev) "css/site.css" "css/site.min.css"))]
+     (include-css "css/bootstrap.min.css" (if (env :dev) "css/site.css" "css/site.min.css"))
+
+     (include-js "js/highstock-all.js")
+     #_(include-js "js/themes/dark-unica.js")]
     [:body
      [:div#app
       [:h3 "ClojureScript has not been compiled!"]
       [:p "please run "
        [:b "lein figwheel"]
        " in order to start the compiler"]]
-     (include-js "js/app.js")]]))
+     (include-js "js/app.js")
+     ]]))
 
 (defroutes routes
   (GET "/" [] home-page)
