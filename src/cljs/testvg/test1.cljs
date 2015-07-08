@@ -63,5 +63,4 @@
 (defn test1-page []
   [:div
    [:h2 "Test page !"]
-   [clock-component-test1 clock-state]
-   [:div [:a {:href "#/"} "go to the home page"]]])
+   [clock-component-test1 clock-state]])

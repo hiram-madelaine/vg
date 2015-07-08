@@ -60,32 +60,35 @@
       [start-stop state]]]]])
 
 
+(defn startable-component
+  "Template do create a startable component
+  Comp is a reagent component
+  action a callback called every timeout. It is passed 2 args : the state and the time-out "
+  [comp action time-out]
+  (fn [state]
+    (reagent/create-class
+      {:reagent-render
+       (fn [state]
+         [comp state])
+       :component-did-mount
+       #(let [{:keys [comm go-chan]} @state]
+         (when-not go-chan
+           (let [go-chan (go-loop []
+                                  (<! comm)
+                                  (flip-state! state)
+                                  (loop [c comm]
+                                    (let [[r cmd] (alts! [c (timeout time-out)])]
+                                      (condp = cmd
+                                        comm (flip-state! state)
+                                        (do
+                                          (action state time-out)
+                                          (recur c)))))
+                                  (recur))]
+             (swap! state assoc :go-chan go-chan))))})))
 
-(defn startable-clock-component
-  "Add the dynamic with core.async"
-  [state]
-  (reagent/create-class
-    {:reagent-render
-     (fn [state]
-       [clock-component state])
-     :component-did-mount
-     #(let [{:keys [comm go-chan]} @state]
-       (when-not go-chan
-         (let [go-chan (go-loop []
-                        (let [cmd (<! comm)]
-                          (do
-                            (flip-state! state)
-                            (loop [c comm]
-                              (let [[r cmd] (alts! [c (timeout 1000)])]
-                                (condp = cmd
-                                  comm (flip-state! state)
-                                  (do
-                                    (swap! state update-in [:count] + 1000)
-                                    (recur c)))))
-                            (recur))))]
-           (swap! state assoc :go-chan go-chan))))}))
 
-
+(def startable-clock-component
+  (startable-component clock-component #(swap! % update-in [:count] + %2) 1000))
 
 (defn build-startable-clock []
   (atom (assoc (build-clock-state (u/color-gen))
@@ -98,5 +101,4 @@
   []
   [:div
    [:h2 "This is page 3"]
-   [startable-clock-component (build-startable-clock)]
-   [:div [:a {:href "#/"} "go to the home page"]]])
+   [startable-clock-component (build-startable-clock)]])

@@ -7,7 +7,8 @@
     [cljs.core.async :refer [chan put! <! timeout]]
     [testvg.utils :as u]
     [cognitect.transit :as t]
-    [cljs.pprint :refer [pprint]])
+    [cljs.pprint :refer [pprint]]
+    [testvg.test3 :refer [start-stop  startable-component]])
   (:import [goog.net XhrIo]
            goog.net.EventType
            [goog.events EventType]
@@ -23,11 +24,6 @@
 
 (def rdr (t/reader :json))
 
-(defn ->transit
-  "Convert payload to transit format."
-  [m]
-  (t/write wtr m))
-
 
 (defn <-transit
   "Convert payload from transit format."
@@ -36,6 +32,8 @@
 
 
 (defn parse-date
+  "Parse the date in the tuple
+   Return a javascript array."
   [[t v]]
   (clj->js [(js/Date.parse t) v]))
 
@@ -93,13 +91,13 @@
 (def chart-config
   {:chart   {:renderTo "chartdiv"}
    :type    "StockChart"
-   :title   {:text  "HighCharts Demo"
+   :title   {:text  ""
              :style {:fontWeight "bold"
                      :fontSize   "25px"}}
    :credits {:enabled false}
    :xAxis   {:type                 "datetime"
              :dateTimeLabelFormats {:day "%H:%M"}}
-   :series  [{:title        "Serie title"
+   :series  [{:title        ""
               :id           0
               :showInLegend true
               :name         "Viggiglobe Volume"
@@ -132,7 +130,7 @@
                   (<! comm)
                   (loop []
                     (<! (timeout 1000))
-                    (async-action url in) #_(>! in #js [(.getTime (js/Date.))  (rand-int 20)])
+                    (async-action url in)
                     (recur))))
        :display-name
        "Graph View Component"
@@ -144,46 +142,66 @@
           [:div {:id "chartdiv"}]])})))
 
 
-(defn graph-view-by-tag []
-  (let [comm (chan)]
+(defn graph-component
+  [state]
+  [:div {:class "container"}
+   [start-stop state]
+   [:div {:id (get-in @state [:chart-config :chart :renderTo])}]])
+
+
+(defn build-graph-state [id url]
+  (atom {:comm         (chan)
+         :in           (chan 1 <-transit-data)
+         :url          url
+         :state        :stop
+         :chart-config (assoc-in chart-config [:chart :renderTo] id)}))
+
+(defn data-volume!
+  "The function that crunches data returned by the raw query "
+  [chart v]
+  (.addPoint (.get chart 0) (parse-date (first v)) true false true))
+
+
+(defn data-volume-by-tag!
+  "The function that crunches the data returned when the option group by tag is on"
+  [chart raw-data]
+  (doseq [[k v] raw-data]
+    (let [serie (.get chart k)
+          data (parse-date (first v))]
+      (if serie
+        (.addPoint serie data)
+        (.addSeries chart (clj->js {:id   k
+                                    :name k
+                                    :data [data]}))))))
+
+(defn startable-graph-component
+  [id url data-fn!]
+  (let [state (build-graph-state id url)]
     (reagent/create-class
       {:component-did-mount
-       #(let [chart (build-chart chart-config)
-              in (chan 1 (comp (map <-transit)
-                               (map :data)))
-              url "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows"]
+       #(let [{:keys [in chart-config]} @state
+              chart (build-chart chart-config)]
          (go-loop []
                   (let [vs (<! in)]
-                    (doseq [[k v] vs]
-                      (if-let [serie (.get chart k)]
-                        (.addPoint serie (parse-date (first v)))
-                        (.addSeries chart (clj->js {:id   k
-                                                    :name k}))))
-                    (recur))
-                  )
-         (go-loop []
-                  (<! comm)
-                  (loop []
-                    (<! (timeout 5000))
-                    (async-action url in) #_(>! in #js [(.getTime (js/Date.))  (rand-int 20)])
+                    (data-fn! chart vs)
                     (recur))))
        :display-name
        "Graph View Component"
        :reagent-render
        (fn []
-         [:div {:class "container"}
-          [:button {:class    "btn btn-primary"
-                    :on-click #(put! comm :go)} "Start"]
-          [:div {:id "chartdiv"}]])})))
+         [(startable-component graph-component
+                               (fn [s]
+                                 (let [{:keys [url in]} @s]
+                                   (async-action url in)))
+                               5000) state])})))
+
+
+
+
+
 
 (defn chart []
-  (let [out (chan 1 <-transit-data)]
-    (go-loop []
-             (pprint (<! out))
-             (recur))
-    (fn []
-      [:div "HEllo Chart"
-      [:button {:class    "btn"
-                :on-click #(async-action "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows" out)}]
-       ;[graph-view]
-       [graph-view-by-tag]])))
+  [:div {:class "container"}
+   ;[graph-view]
+   [startable-graph-component "chart-raw" "http://api.vigiglobe.com/api/statistics/v1/volume?project_id=vgteam-TV_Shows" data-volume!]
+   [startable-graph-component "chart-tag"  "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows" data-volume-by-tag!]])

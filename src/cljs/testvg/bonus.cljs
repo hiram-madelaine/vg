@@ -22,5 +22,4 @@
                                      [startable-clock-component clock]
                                      [:button {:class    "close"
                                                :on-click #(swap! bonus-state (fn [xs]
-                                                                               (remove #{clock} xs)))} "X"]]))]
-   [:div [:a {:href "#/"} "go to the home page"]]])
+                                                                               (remove #{clock} xs)))} "X"]]))]])
