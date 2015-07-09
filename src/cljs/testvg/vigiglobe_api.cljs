@@ -38,23 +38,13 @@
   (clj->js [(js/Date.parse t) v]))
 
 
-(def <-transit-data
+(def xtransit-data
   (comp (map <-transit)
         (map :data)))
 
-(def <-first-parse-date
+(def xfirst-parse-date
   (comp (map first)
         (map parse-date)))
-
-
-
-(def <api
-  "Transducer to convert data from api to Highcharts data"
-  (comp (map <-transit)
-        (map :data)
-        (map first)
-        (map parse-date)))
-
 
 ;___________________________________________________________
 ;                                                           |
@@ -78,9 +68,7 @@
             :on-complete (fn [e]
                            (put! out e))
             :on-error    (fn [e]
-                           (put! out [:ko "Fuck an error"]))}))
-
-
+                           (put! out :ko))}))
 
 
 ;___________________________________________________________
@@ -93,7 +81,7 @@
    :type    "StockChart"
    :title   {:text  ""
              :style {:fontWeight "bold"
-                     :fontSize   "25px"}}
+                     :fontSize   "20px"}}
    :credits {:enabled false}
    :xAxis   {:type                 "datetime"
              :dateTimeLabelFormats {:day "%H:%M"}}
@@ -115,46 +103,23 @@
 ;___________________________________________________________|
 
 
-(defn graph-view []
-  (let [comm (chan)]
-    (reagent/create-class
-      {:component-did-mount
-       #(let [chart (build-chart chart-config)
-              in (chan 1 <api)
-              url "http://api.vigiglobe.com/api/statistics/v1/volume?project_id=vgteam-TV_Shows"]
-         (go-loop []
-                  (let [v (<! in)]
-                    (.addPoint (.get chart 0) v true false true)
-                    (recur)))
-         (go-loop []
-                  (<! comm)
-                  (loop []
-                    (<! (timeout 1000))
-                    (async-action url in)
-                    (recur))))
-       :display-name
-       "Graph View Component"
-       :reagent-render
-       (fn []
-         [:div {:class "container"}
-          [:button {:class    "btn btn-primary"
-                    :on-click #(put! comm :go)} "Start"]
-          [:div {:id "chartdiv"}]])})))
-
-
 (defn graph-component
   [state]
   [:div {:class "container"}
-   [start-stop state]
-   [:div {:id (get-in @state [:chart-config :chart :renderTo])}]])
+   [:div {:class "graph-container"}
+    [:div {:id (get-in @state [:chart-config :chart :renderTo])}]
+    [start-stop state {:start "btn-default"
+                       :stop  "btn-info"}]]])
 
 
-(defn build-graph-state [id url]
+(defn build-graph-state [{:keys [id url title]}]
   (atom {:comm         (chan)
-         :in           (chan 1 <-transit-data)
+         :in           (chan 1 xtransit-data)
          :url          url
          :state        :stop
-         :chart-config (assoc-in chart-config [:chart :renderTo] id)}))
+         :chart-config (-> chart-config
+                           (assoc-in [:chart :renderTo] id)
+                           (assoc-in [:title :text] title))}))
 
 (defn data-volume!
   "The function that crunches data returned by the raw query "
@@ -175,18 +140,18 @@
                                     :data [data]}))))))
 
 (defn startable-graph-component
-  [id url data-fn!]
-  (let [state (build-graph-state id url)]
+  [{:keys [title data-fn] :as spec}]
+  (let [state (build-graph-state spec)]
     (reagent/create-class
       {:component-did-mount
        #(let [{:keys [in chart-config]} @state
               chart (build-chart chart-config)]
          (go-loop []
                   (let [vs (<! in)]
-                    (data-fn! chart vs)
+                    (data-fn chart vs)
                     (recur))))
        :display-name
-       "Graph View Component"
+       (str "Graph View Component " title)
        :reagent-render
        (fn []
          [(startable-component graph-component
@@ -196,12 +161,13 @@
                                5000) state])})))
 
 
-
-
-
-
 (defn chart []
   [:div {:class "container"}
-   ;[graph-view]
-   [startable-graph-component "chart-raw" "http://api.vigiglobe.com/api/statistics/v1/volume?project_id=vgteam-TV_Shows" data-volume!]
-   [startable-graph-component "chart-tag"  "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows" data-volume-by-tag!]])
+   [startable-graph-component {:id "chart-raw"
+                               :title "statistics v1 volume vgteam-TV_Shows"
+                               :url "http://api.vigiglobe.com/api/statistics/v1/volume?project_id=vgteam-TV_Shows"
+                               :data-fn data-volume!}]
+   [startable-graph-component {:id "chart-tag"
+                               :title "statistics v1 volume vgteam-TV_Shows grouped by tag"
+                               :url "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows"
+                               :data-fn data-volume-by-tag!}]])

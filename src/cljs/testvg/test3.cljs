@@ -13,6 +13,7 @@
 
 
 (defn flip-state!
+  "stop <-> start"
   [state]
   (swap! state update-in [:state] cmds))
 
@@ -30,20 +31,20 @@
              :on-blur     #(swap! clock-state assoc :name (u/e-value %))}]]])
 
 (defn start-stop
-  "Display a button that start/stop the counbter. "
-  []
-  (let [styles {:start "btn-primary"
-                :stop "btn-danger"}]
-    (fn [state]
-      (let [{:keys [state comm]} @state
-            status (cmds state)]
-        [:button {:on-click #(put! comm status)
-                  :class    (str "btn btn-lg " (styles status))}
-         (name status)]))))
+  "Display a button that can start/stop the counter."
+  ([state styles]
+   (let [{:keys [state comm]} @state
+         status (cmds state)]
+     [:button {:on-click #(put! comm status)
+               :class    (str "btn btn-lg " (styles status))}
+      (name status)]))
+  ([state]
+    (start-stop state {:start "btn-primary"
+                       :stop "btn-danger"})))
 
 
 (defn clock-component
-  "Diplay the full task"
+  "Diplay the full Timer Task component"
   [state]
   [:div {:class "clock"}
    [:div {:class "panel panel-default"}
@@ -61,9 +62,9 @@
 
 
 (defn startable-component
-  "Template do create a startable component
-  Comp is a reagent component
-  action a callback called every timeout. It is passed 2 args : the state and the time-out "
+  "HOF to create a startable component
+  comp : reagent component used for the rendering
+  action : callback called every timeout. It is passed 2 args : the state and the time-out"
   [comp action time-out]
   (fn [state]
     (reagent/create-class
@@ -90,15 +91,18 @@
 (def startable-clock-component
   (startable-component clock-component #(swap! % update-in [:count] + %2) 1000))
 
-(defn build-startable-clock []
+(defn build-startable-clock
+  []
   (atom (assoc (build-clock-state (u/color-gen))
           :state :stop
           :comm (chan)
           :uuid (str (random-uuid)))))
 
 
+(def test3-state (build-startable-clock))
+
 (defn test3-page
   []
   [:div
-   [:h2 "This is page 3"]
-   [startable-clock-component (build-startable-clock)]])
+   [:h3 "This Timer can be started and stopped at will."]
+   [startable-clock-component test3-state]])

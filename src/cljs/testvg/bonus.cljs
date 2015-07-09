@@ -12,6 +12,7 @@
 
 (defn bonus-page []
   [:div {:class ""}
+   [:h3 "Track time spent on your all your tasks"]
    [:div {:class "navbar navbar-default"}
     [:div {:class "container-fluid"}
      [:button {:class    "btn btn-default navbar-btn"
