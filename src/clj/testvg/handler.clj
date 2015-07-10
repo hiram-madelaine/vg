@@ -18,6 +18,8 @@
      (include-css "css/bootstrap.min.css" (if (env :dev) "css/site.css" "css/site.min.css"))
 
      (include-js "js/highstock-all.js")
+     (include-js "js/modules/heatmap.js")
+     (include-js "js/modules/treemap.js")
      #_(include-js "js/themes/dark-unica.js")]
     [:body
      [:div#app

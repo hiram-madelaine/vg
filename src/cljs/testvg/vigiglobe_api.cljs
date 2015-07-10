@@ -96,7 +96,8 @@
 
 (defn build-chart
   [config]
-  (js/Highcharts.StockChart. (clj->js config)))
+  (js/Highcharts.Chart. (clj->js config))
+  #_(js/Highcharts.StockChart. (clj->js config)))
 ;___________________________________________________________
 ;                                                           |
 ;        Reagent components                                 |
@@ -112,12 +113,13 @@
                        :stop  "btn-info"}]]])
 
 
-(defn build-graph-state [{:keys [id url title]}]
+(defn build-graph-state
+  [{:keys [id url title config] :or {config chart-config}}]
   (atom {:comm         (chan)
          :in           (chan 1 xtransit-data)
          :url          url
          :state        :stop
-         :chart-config (-> chart-config
+         :chart-config (-> config
                            (assoc-in [:chart :renderTo] id)
                            (assoc-in [:title :text] title))}))
 
@@ -138,6 +140,15 @@
         (.addSeries chart (clj->js {:id   k
                                     :name k
                                     :data [data]}))))))
+
+
+(defn data-volume-by-tag-tree!
+  [chart raw-data]
+  (let [serie (.get chart 0)
+        data (map-indexed (fn [idx [k [[_ v]]]] {:name       k
+                                                 :value      v
+                                                 :colorValue (inc idx)}) raw-data)]
+    (.setData serie (clj->js data))))
 
 (defn startable-graph-component
   [{:keys [title data-fn] :as spec}]
@@ -170,4 +181,14 @@
    [startable-graph-component {:id "chart-tag"
                                :title "statistics v1 volume vgteam-TV_Shows grouped by tag"
                                :url "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows"
-                               :data-fn data-volume-by-tag!}]])
+                               :data-fn data-volume-by-tag!}]
+   [startable-graph-component {:id "chart-tree"
+                               :title "statistics v1 volume vgteam-TV_Shows grouped by tag - Tree map"
+                               :url "http://api.vigiglobe.com/api/statistics/v1/volume?grouped=true&project_id=vgteam-TV_Shows"
+                               :data-fn data-volume-by-tag-tree!
+                               :config {
+                                        :series [{:animation false
+                                                  :id 0
+                                                  :colorByPoint true
+                                                  :type "treemap"
+                                                  :layoutAlgorithm "squarified"}]}}]])
