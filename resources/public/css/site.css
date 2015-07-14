@@ -38,6 +38,7 @@ a:hover {
 
 .clock {
   width: 280px;
+  box-shadow: #999 3px 3px 10px 1px;
 }
 
 .clock > .panel {

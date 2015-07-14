@@ -46,19 +46,18 @@
 (defn clock-component
   "Diplay the full Timer Task component"
   [state]
-  [:div {:class "clock"}
-   [:div {:class "panel panel-default"}
-    [:div {:class "panel-heading"
-           :style {:background-color (:color @state)
-                   :opacity          0.3}}
-     [:div {:class "panel-title"}
-      [task-name state]]]
-    [:div {:class "panel-body"}
-     [:h1 "Time spent on task : "]
-     [clock-view state]]
-    [:div {:class "panel-footer"}
-     [:div {:class "btn-group"}
-      [start-stop state]]]]])
+  [:div {:class "clock panel panel-default"}
+   [:div {:class "panel-heading"
+          :style {:background-color (:color @state)
+                  :opacity          0.3}}
+    [:div {:class "panel-title"}
+     [task-name state]]]
+   [:div {:class "panel-body"}
+    [:h1 "Time spent on task : "]
+    [clock-view state]]
+   [:div {:class "panel-footer"}
+    [:div {:class "btn-group"}
+     [start-stop state]]]])
 
 
 (defn startable-component
